@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connections – Custom Puzzle</title>
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --panel:#111827; /* gray-900 */
+      --text:#e5e7eb; /* gray-200 */
+      --muted:#94a3b8; /* slate-400 */
+      --tile:#1f2937; /* gray-800 */
+      --tile-border:#374151; /* gray-700 */
+      --tile-selected:#2563eb; /* blue-600 */
+      --good:#22c55e; /* green-500 */
+      --bad:#ef4444; /* red-500 */
+      --yellow:#facc15; --green:#22c55e; --blue:#60a5fa; --purple:#a78bfa;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;
+      background:var(--bg); color:var(--text); display:flex; align-items:center; justify-content:center; padding:20px;
+    }
+    .wrap{max-width:900px; width:100%;}
+    header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;}
+    h1{font-size:clamp(20px,3vw,28px); margin:0; letter-spacing:.5px}
+    .lives{display:flex; gap:6px; align-items:center; font-weight:600;}
+    .life{width:14px; height:14px; border-radius:50%; background:var(--good); opacity:.25}
+    .life.live{opacity:1}
+    .board{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+    .tile{
+      user-select:none; background:var(--tile); border:2px solid var(--tile-border); color:var(--text);
+      border-radius:10px; padding:16px 10px; text-align:center; font-weight:700; cursor:pointer;
+      transition:transform .05s ease, background .15s ease, border-color .15s ease;
+    }
+    .tile:hover{transform:translateY(-1px)}
+    .tile.selected{background:var(--tile-selected); border-color:#3b82f6}
+    .controls{display:flex; gap:10px; margin:14px 0 18px;}
+    button{
+      background:#334155; color:#fff; border:none; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer;
+      transition:opacity .15s ease, transform .05s ease; letter-spacing:.3px
+    }
+    button:active{transform:translateY(1px)}
+    button[disabled]{opacity:.45; cursor:not-allowed}
+    .msg{min-height:22px; color:var(--muted); margin-bottom:10px; font-weight:600}
+    .solved{display:grid; gap:8px; margin-top:14px}
+    .group-row{
+      display:flex; align-items:center; gap:8px; padding:12px; border-radius:12px; font-weight:800; color:#0b1020;
+    }
+    .group-words{opacity:.85; font-weight:700}
+    .footer{margin-top:18px; color:var(--muted); font-size:14px}
+    .hidden{display:none}
+    .toast{color:#fff; font-weight:700}
+    @media (max-width:520px){
+      .tile{padding:14px 8px; font-size:14px}
+      .controls{flex-wrap:wrap}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Connections – Custom Puzzle</h1>
+      <div class="lives" id="lives"></div>
+    </header>
+
+    <div class="msg" id="message">Select 4 words that form a group.</div>
+
+    <div class="board" id="board"></div>
+
+    <div class="controls">
+      <button id="submitBtn" disabled>Submit</button>
+      <button id="deselectBtn" disabled>Deselect</button>
+      <button id="shuffleBtn">Shuffle</button>
+    </div>
+
+    <div class="solved" id="solved"></div>
+
+    <div class="footer">
+      Inspired by NYT Connections. This custom puzzle was generated just for you.
+    </div>
+  </div>
+
+  <script>
+    // === CONFIGURE YOUR PUZZLE HERE ===
+    // Words must be unique strings.
+    const PUZZLE = {
+      groups: [
+        {
+          name: "Start with body parts",
+          answers: ["Lunge","Headmaster","Handy","Shine"]
+        },
+        {
+          name: "_____ Table",
+          answers: ["Coffee","End","Poker","Pinball"]
+        },
+        {
+          name: "Things you can peel",
+          answers: ["Paint","Orange","Skin","Rubber"]
+        },
+        {
+          name: "Associated with October",
+          answers: ["Pumpkin Spice","Candy","Columbus","Mask"]
+        }
+      ],
+      // How many mistakes are allowed (NYT uses 4)
+      mistakesAllowed: 4
+    };
+
+    // === GAME LOGIC BELOW ===
+    const colors = ["var(--yellow)","var(--green)","var(--blue)","var(--purple)"];
+
+    const boardEl = document.getElementById('board');
+    const messageEl = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+    const deselectBtn = document.getElementById('deselectBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const solvedEl = document.getElementById('solved');
+    const livesEl = document.getElementById('lives');
+
+    let pool = PUZZLE.groups.flatMap(g => g.answers);
+    let remainingGroups = PUZZLE.groups.map(g => ({...g}));
+    let selected = new Set();
+    let solvedCount = 0;
+    let mistakesLeft = PUZZLE.mistakesAllowed;
+
+    const rng = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+    const shuffle = arr => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    };
+
+    function renderLives(){
+      livesEl.innerHTML = "Mistakes: " + Array.from({length:PUZZLE.mistakesAllowed}).map((_,i)=>`<span class="life ${i < mistakesLeft ? 'live' : ''}"></span>`).join('');
+    }
+
+    function toast(msg, good=false){
+      messageEl.textContent = msg;
+      messageEl.style.color = good ? 'var(--good)' : 'var(--muted)';
+    }
+
+    function renderBoard(){
+      boardEl.innerHTML = '';
+      pool.forEach(word => {
+        const el = document.createElement('button');
+        el.textContent = word;
+        el.className = 'tile';
+        el.setAttribute('data-word', word);
+        el.onclick = () => toggleSelect(word, el);
+        boardEl.appendChild(el);
+      });
+      updateButtons();
+    }
+
+    function toggleSelect(word, el){
+      if (selected.has(word)){
+        selected.delete(word);
+        el.classList.remove('selected');
+      } else {
+        if (selected.size < 4) {
+          selected.add(word);
+          el.classList.add('selected');
+        }
+      }
+      updateButtons();
+    }
+
+    function updateButtons(){
+      submitBtn.disabled = selected.size !== 4;
+      deselectBtn.disabled = selected.size === 0;
+    }
+
+    function deselectAll(){
+      selected.clear();
+      document.querySelectorAll('.tile.selected').forEach(t=>t.classList.remove('selected'));
+      updateButtons();
+      toast('Selections cleared.');
+    }
+
+    function shuffleTiles(){
+      // leave selections but shuffle visual order
+      const children = Array.from(boardEl.children);
+      shuffle(children);
+      children.forEach(c=>boardEl.appendChild(c));
+      toast('Shuffled.');
+    }
+
+    function submit(){
+      if (selected.size !== 4) return;
+      const pick = Array.from(selected);
+
+      // Check if matches any remaining group (order independent)
+      const matchIndex = remainingGroups.findIndex(g =>
+        g.answers.every(a => pick.includes(a))
+      );
+
+      if (matchIndex !== -1){
+        const group = remainingGroups.splice(matchIndex,1)[0];
+        solvedCount++;
+        lockInGroup(group);
+        deselectAll();
+        if (remainingGroups.length === 0){
+          endGame(true);
+        } else {
+          toast('Correct! Keep going.', true);
+        }
+      } else {
+        mistakesLeft--;
+        flashWrong(pick);
+        renderLives();
+        if (mistakesLeft <= 0){
+          endGame(false);
+        } else {
+          toast(`Not a group. ${mistakesLeft} mistake${mistakesLeft===1?'':'s'} left.`);
+        }
+      }
+    }
+
+    function flashWrong(words){
+      words.forEach(w=>{
+        const el = document.querySelector(`.tile[data-word="${CSS.escape(w)}"]`);
+        if (el){
+          el.animate([
+            { transform:'translateX(0)' },
+            { transform:'translateX(-6px)' },
+            { transform:'translateX(6px)' },
+            { transform:'translateX(0)' }
+          ], { duration:200, easing:'ease-out' });
+        }
+      });
+    }
+
+    function lockInGroup(group){
+      // Remove those tiles from the pool/board
+      pool = pool.filter(w => !group.answers.includes(w));
+      renderBoard();
+
+      // Add solved row with color by solve order (NYT style order colors)
+      const row = document.createElement('div');
+      row.className = 'group-row';
+      row.style.background = colors[solvedCount-1] || 'var(--yellow)';
+      row.innerHTML = `<div>${group.name}</div><div class="group-words"> — ${group.answers.join(', ')}</div>`;
+      solvedEl.appendChild(row);
+    }
+
+    function endGame(win){
+      submitBtn.disabled = true; deselectBtn.disabled = true; shuffleBtn.disabled = true;
+      const summary = buildShare(win);
+      if (win){
+        toast('You solved it! \u2728', true);
+      } else {
+        toast('Out of mistakes. Puzzle over.');
+        // Reveal remaining groups
+        remainingGroups.forEach(g=>lockInGroup(g));
+      }
+      // Offer share text
+      const shareBtn = document.createElement('button');
+      shareBtn.textContent = 'Copy Results';
+      shareBtn.onclick = async ()=>{
+        try{ await navigator.clipboard.writeText(summary); toast('Results copied to clipboard!', true);}catch(e){ toast('Could not copy automatically. Long-press to copy.', false);}
+      };
+      document.querySelector('.controls').appendChild(shareBtn);
+    }
+
+    function buildShare(win){
+      // Build a simple emoji grid by solve order (🟨🟩🟦🟪). Use \n to split into rows.
+      const colorEmojis = ['🟨','🟩','🟦','🟪'];
+      const rows = [];
+      // For a casual share, we randomize solved rows positions to form a 4x4
+      // but preserve color count by order solved.
+      const colorGrid = [];
+      for (let i=0;i<4;i++) for (let j=0;j<4;j++) colorGrid.push('⬛');
+      // Just fill first 4 with first color, next 4 with second, etc.
+      let idx = 0;
+      for (let c=0;c<solvedCount;c++){
+        for (let k=0;k<4;k++) colorGrid[idx++] = colorEmojis[c];
+      }
+      // Remaining (if lost) fill with ⬛
+      const lines = [];
+      for (let r=0;r<4;r++) lines.push(colorGrid.slice(r*4,(r+1)*4).join(''));
+      const title = `Connections (Custom) — ${win? 'Solved':'Failed'} — Mistakes used: ${PUZZLE.mistakesAllowed - mistakesLeft}/${PUZZLE.mistakesAllowed}`;
+      return `${title}\n${lines.join('\n')}`;
+    }
+
+    // Wire up buttons
+    submitBtn.onclick = submit;
+    deselectBtn.onclick = deselectAll;
+    shuffleBtn.onclick = shuffleTiles;
+
+    // Init
+    renderLives();
+    pool = shuffle(pool);
+    renderBoard();
+    toast('Select four words that go together. You have ' + PUZZLE.mistakesAllowed + ' mistakes.');
+  </script>
+</body>
+</html>
