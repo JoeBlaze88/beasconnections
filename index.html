@@ -6,13 +6,15 @@
   <title>Bea's Connections</title>
   <style>
     :root{
-      --bg:#0f172a; --panel:#111827; --text:#e5e7eb; --muted:#94a3b8;
-      --tile:#1f2937; --tile-border:#374151; --tile-selected:#2563eb;
-      --good:#22c55e; --bad:#ef4444; --yellow:#facc15; --green:#22c55e; --blue:#60a5fa; --purple:#a78bfa;
+      /* colorful theme */
+      --bg: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+      --panel:#ffffffcc; --text:#1f2937; --muted:#4b5563;
+      --tile:#ffffff; --tile-border:#d1d5db; --tile-selected:#2563eb;
+      --good:#16a34a; --bad:#dc2626; --yellow:#facc15; --green:#22c55e; --blue:#60a5fa; --purple:#a78bfa;
     }
     html,body{height:100%}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--text); display:flex; align-items:center; justify-content:center; padding:20px}
-    .wrap{max-width:960px; width:100%}
+    .wrap{max-width:960px; width:100%; background:var(--panel); border-radius:20px; padding:20px; box-shadow:0 4px 20px rgba(0,0,0,0.1)}
     header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px}
     h1{font-size:clamp(20px,3vw,28px); margin:0}
     .sub{opacity:.8; font-weight:600}
@@ -20,9 +22,9 @@
     .life{width:14px; height:14px; border-radius:50%; background:var(--good); opacity:.25}
     .life.live{opacity:1}
     .board{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
-    .tile{user-select:none; background:var(--tile); border:2px solid var(--tile-border); color:var(--text); border-radius:10px; padding:16px 10px; text-align:center; font-weight:700; cursor:pointer; transition:transform .05s ease, background .15s ease, border-color .15s ease}
+    .tile{user-select:none; background:var(--tile); border:2px solid var(--tile-border); color:var(--text); border-radius:10px; padding:16px 10px; text-align:center; font-weight:700; cursor:pointer; transition:transform .05s ease, background .15s ease, border-color .15s ease; box-shadow:0 2px 5px rgba(0,0,0,0.05)}
     .tile:hover{transform:translateY(-1px)}
-    .tile.selected{background:var(--tile-selected); border-color:#3b82f6}
+    .tile.selected{background:var(--tile-selected); color:#fff; border-color:#3b82f6}
     .controls{display:flex; gap:10px; margin:14px 0 18px; flex-wrap:wrap}
     button{background:#334155; color:#fff; border:none; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; transition:opacity .15s ease, transform .05s ease}
     button:active{transform:translateY(1px)}
@@ -31,9 +33,9 @@
     .solved{display:grid; gap:8px; margin-top:14px}
     .group-row{display:flex; align-items:center; gap:8px; padding:12px; border-radius:12px; font-weight:800; color:#0b1020}
     .group-words{opacity:.85; font-weight:700}
-    .footer{margin-top:18px; color:var(--muted); font-size:14px}
-    .final{margin-top:20px; text-align:center; font-size:1.6rem; font-weight:900}
-    .final .big{display:block; font-size:2rem; margin-top:6px}
+    .footer{margin-top:18px; color:var(--muted); font-size:14px; text-align:center}
+    .final{margin-top:20px; text-align:center; font-size:1.6rem; font-weight:900; color:#b91c1c}
+    .final .big{display:block; font-size:2rem; margin-top:6px; color:#7c3aed}
     @media (max-width:520px){.tile{padding:14px 8px; font-size:14px}}
   </style>
 </head>
@@ -183,7 +185,7 @@
         if (remainingGroups.length === 0) endGame(true); else toast('Correct! Keep going.', true);
       } else {
         mistakesLeft--; flashWrong(pick); renderLives();
-        if (mistakesLeft <= 0) endGame(false); else toast(`Not a group. ${mistakesLeft===1?'':'s'} left.`.replace(" 0", " 0"));
+        if (mistakesLeft <= 0) endGame(false); else toast(`Not a group. ${mistakesLeft} mistake${mistakesLeft===1?'':'s'} left.`);
       }
     }
 
@@ -230,12 +232,10 @@ ${lines.join('
         nextBtn.onclick = ()=>loadPuzzle(currentIndex + 1);
         document.querySelector('.controls').appendChild(nextBtn);
       } else {
-        // Final celebration message
         const final = document.createElement('div');
         final.className = 'final';
         final.innerHTML = `🎉 You're done. <span class="big">Congratulations. HAPPY BIRTHDAY!</span> 🎉`;
         document.querySelector('.wrap').appendChild(final);
-        // Optional: Restart button
         const restart = document.createElement('button');
         restart.textContent = 'Play Again From Start';
         restart.onclick = ()=>loadPuzzle(0);
@@ -245,25 +245,18 @@ ${lines.join('
 
     function loadPuzzle(i){
       currentIndex = i; currentPuzzle = PUZZLES[i];
-      // Reset state
       pool = shuffle(currentPuzzle.groups.flatMap(g=>g.answers));
       remainingGroups = currentPuzzle.groups.map(g=>({...g}));
       selected = new Set(); solvedCount = 0; mistakesLeft = currentPuzzle.mistakesAllowed;
-      // Reset UI
       solvedEl.innerHTML = ''; messageEl.textContent = ''; submitBtn.disabled = true; deselectBtn.disabled = true; shuffleBtn.disabled = false;
-      // Remove any extra buttons from prior end screens
       document.querySelectorAll('.controls button').forEach(btn=>{ if (btn.textContent.startsWith('Copy Results') || btn.textContent.startsWith('Next Puzzle') || btn.textContent.startsWith('Play Again')) btn.remove(); });
       const finalEl = document.querySelector('.final'); if (finalEl) finalEl.remove();
-
       renderLives(); renderBoard();
       subtitleEl.textContent = `${currentPuzzle.title} — ${i+1} of ${PUZZLES.length}`;
       toast('Select four words that go together. You have ' + currentPuzzle.mistakesAllowed + ' mistakes.');
     }
 
-    // Wire up buttons
     submitBtn.onclick = submit; deselectBtn.onclick = deselectAll; shuffleBtn.onclick = shuffleTiles;
-
-    // Init first puzzle
     loadPuzzle(0);
   </script>
 </body>
