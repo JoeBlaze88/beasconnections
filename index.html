@@ -60,7 +60,18 @@
 
     .tile{
       user-select:none; cursor:pointer;
-      background:#f8fafc; border:2px solid #e2e8f0; border-radius:14px; padding:14px; font-weight:800; text-align:center; min-height:64px; display:flex; align-items:center; justify-content:center; transition:.18s transform, .18s box-shadow, .18s border-color, .18s background;
+      background:#f8fafc; 
+      border:2px solid #e2e8f0; 
+      border-radius:14px; 
+      padding:14px; 
+      font-weight:800; 
+      text-align:center; 
+      min-height:64px; 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      color:#111827; /* FIXED: Dark text */
+      transition:.18s transform, .18s box-shadow, .18s border-color, .18s background;
       box-shadow: 0 4px 0 #e2e8f0;
     }
     .tile:hover{ transform: translateY(-1px); box-shadow: 0 6px 0 #e2e8f0; }
@@ -145,51 +156,39 @@
   </div>
 
   <script>
-    // ---- Game Data ---------------------------------------------------------
     const PUZZLES = [
-      {
-        groups: [
-          { name: "All start with parts of the body", color: "#fde68a", items: ["Lunge","Headmaster","Handy","Shine"] },
-          { name: "______ Table", color: "#93c5fd", items: ["Coffee","End","Poker","Pinball"] },
-          { name: "Things you can peel", color: "#86efac", items: ["Paint","Orange","Skin","Rubber"] },
-          { name: "Associated to October", color: "#fca5a5", items: ["Pumpkin Spice","Candy","Columbus","Mask"] },
-        ]
-      },
-      {
-        groups: [
-          { name: "Things you put on your face", color: "#c4b5fd", items: ["Makeup","Goggles","Halloween mask","Sunscreen"] },
-          { name: "Ends with an animal", color: "#f9a8d4", items: ["Copycat","Bookworm","Packrat","Scapegoat"] },
-          { name: "First word in sodas", color: "#67e8f9", items: ["Mountain","Dr.","Root","Ginger"] },
-          { name: "Words that start with basketball terms", color: "#bbf7d0", items: ["Netflix","Hoopla","Courtroom","Dunkin Donuts"] },
-        ]
-      },
-      {
-        groups: [
-          { name: "Contain first names", color: "#fecaca", items: ["Drivers ed","Jack-o-lantern","Mason jar","Graham cracker"] },
-          { name: "Things in our backyard", color: "#fcd34d", items: ["Connect 4","Pirate ship","Bird house","Fire pit"] },
-          { name: "Palindromes", color: "#a7f3d0", items: ["Noon","Level","Kayak","Rotator"] },
-          { name: "To get rid of", color: "#93c5fd", items: ["Shed","Eliminate","Scrap","Dump"] },
-        ]
-      },
-      {
-        groups: [
-          { name: "Words containing numbers", color: "#86efac", items: ["Network","Canine","Freight","Content"] },
-          { name: "______ Fall", color: "#fca5a5", items: ["Free","Water","Pit","Night"] },
-          { name: "Things with prizes inside", color: "#fde68a", items: ["Cracker jacks","Kinder Egg","Cereal","Happy meal"] },
-          { name: "Things that are salty", color: "#c4b5fd", items: ["Tears","Popcorn","Ocean","Saline Solution"] },
-        ]
-      },
-      {
-        groups: [
-          { name: "Charlotte Hornets players", color: "#bbf7d0", items: ["Ball","Bridges","Knueppel","Curry"] },
-          { name: "Thai restaurant orders", color: "#93c5fd", items: ["Spring Roll","Iced Tea","Drunken Noodles","Satay"] },
-          { name: "Popular 90s singers' last names", color: "#fcd34d", items: ["Twain","Carey","Dion","Houston"] },
-          { name: "Stephen King novels", color: "#f9a8d4", items: ["Misery","Carrie","Dreamcatcher","Insomnia"] },
-        ]
-      }
+      { groups: [
+        { name: "All start with parts of the body", color: "#fde68a", items: ["Lunge","Headmaster","Handy","Shine"] },
+        { name: "______ Table", color: "#93c5fd", items: ["Coffee","End","Poker","Pinball"] },
+        { name: "Things you can peel", color: "#86efac", items: ["Paint","Orange","Skin","Rubber"] },
+        { name: "Associated to October", color: "#fca5a5", items: ["Pumpkin Spice","Candy","Columbus","Mask"] },
+      ]},
+      { groups: [
+        { name: "Things you put on your face", color: "#c4b5fd", items: ["Makeup","Goggles","Halloween mask","Sunscreen"] },
+        { name: "Ends with an animal", color: "#f9a8d4", items: ["Copycat","Bookworm","Packrat","Scapegoat"] },
+        { name: "First word in sodas", color: "#67e8f9", items: ["Mountain","Dr.","Root","Ginger"] },
+        { name: "Words that start with basketball terms", color: "#bbf7d0", items: ["Netflix","Hoopla","Courtroom","Dunkin Donuts"] },
+      ]},
+      { groups: [
+        { name: "Contain first names", color: "#fecaca", items: ["Drivers ed","Jack-o-lantern","Mason jar","Graham cracker"] },
+        { name: "Things in our backyard", color: "#fcd34d", items: ["Connect 4","Pirate ship","Bird house","Fire pit"] },
+        { name: "Palindromes", color: "#a7f3d0", items: ["Noon","Level","Kayak","Rotator"] },
+        { name: "To get rid of", color: "#93c5fd", items: ["Shed","Eliminate","Scrap","Dump"] },
+      ]},
+      { groups: [
+        { name: "Words containing numbers", color: "#86efac", items: ["Network","Canine","Freight","Content"] },
+        { name: "______ Fall", color: "#fca5a5", items: ["Free","Water","Pit","Night"] },
+        { name: "Things with prizes inside", color: "#fde68a", items: ["Cracker jacks","Kinder Egg","Cereal","Happy meal"] },
+        { name: "Things that are salty", color: "#c4b5fd", items: ["Tears","Popcorn","Ocean","Saline Solution"] },
+      ]},
+      { groups: [
+        { name: "Charlotte Hornets players", color: "#bbf7d0", items: ["Ball","Bridges","Knueppel","Curry"] },
+        { name: "Thai restaurant orders", color: "#93c5fd", items: ["Spring Roll","Iced Tea","Drunken Noodles","Satay"] },
+        { name: "Popular 90s singers' last names", color: "#fcd34d", items: ["Twain","Carey","Dion","Houston"] },
+        { name: "Stephen King novels", color: "#f9a8d4", items: ["Misery","Carrie","Dreamcatcher","Insomnia"] },
+      ]}
     ];
 
-    // ---- Utilities --------------------------------------------------------
     const $ = (sel, root=document) => root.querySelector(sel);
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
     const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]);
@@ -201,7 +200,6 @@
       setTimeout(()=> t.classList.remove('show'), 1400);
     }
 
-    // ---- Game State -------------------------------------------------------
     let current = 0;
     let triesLeft = 4;
     let solvedGroups = [];
@@ -298,7 +296,6 @@
       }
     }
 
-    // ---- Event wiring -----------------------------------------------------
     $('#submitBtn').addEventListener('click', ()=>{
       const selected = $$('.tile.selected').map(el=>el.textContent);
       if(selected.length !== 4) return;
@@ -330,8 +327,7 @@
     });
 
     $('#shuffleBtn').addEventListener('click', ()=>{
-      const tiles = $$('.tile');
-      if(!tiles.length) return;
+      if(!$$('.tile').length) return;
       renderBoard();
     });
 
